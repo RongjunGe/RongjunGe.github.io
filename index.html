@@ -1,361 +1,318 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rongjun Ge</title>
+from pathlib import Path
+import re, html
 
-<style>
-body {
-  font-family: Arial, Helvetica, sans-serif;
-  max-width: 1050px;
-  margin: 0 auto;
-  padding: 28px;
-  color: #222;
-  line-height: 1.55;
-  background: #fff;
-  font-size: 15.5px;
+src = Path("/mnt/data/RongjunGe_index_complete(1).html")
+text = src.read_text(encoding="utf-8")
+
+# Replace / expand style with final self-contained style
+style = """<style>
+:root{
+  --text:#222;
+  --muted:#555;
+  --blue:#1a5fb4;
+  --blue-dark:#173f6b;
+  --line:#d9d9d9;
+  --soft:#f7f8fa;
+  --soft-line:#e5e7eb;
 }
-
-a {
-  color: #1a5fb4;
-  text-decoration: none;
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:Arial,Helvetica,sans-serif;
+  max-width:1120px;
+  margin:0 auto;
+  padding:24px 26px;
+  color:var(--text);
+  line-height:1.58;
+  font-size:15px;
+  background:#fff;
 }
-
-a:hover {
-  text-decoration: underline;
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+nav{
+  text-align:right;
+  margin-bottom:25px;
+  font-size:15px;
 }
-
-nav {
-  text-align: right;
-  margin-bottom: 35px;
-  font-size: 15px;
+nav a{
+  margin-left:20px;
+  color:#333;
+  font-weight:500;
 }
-
-nav a {
-  margin-left: 22px;
-  color: #222;
-  font-weight: 500;
+.home{
+  display:flex;
+  gap:32px;
+  align-items:flex-start;
+  margin-top:4px;
 }
-
-.home {
-  display: flex;
-  gap: 34px;
-  align-items: flex-start;
+.profile-img{
+  width:230px;
+  border-radius:4px;
+  object-fit:cover;
 }
-
-.profile-img {
-  width: 230px;
-  border-radius: 4px;
+.name{
+  font-size:36px;
+  font-weight:700;
+  line-height:1.18;
+  margin-bottom:8px;
 }
-
-.name {
-  font-size: 34px;
-  font-weight: 700;
-  margin-bottom: 10px;
+.position{
+  font-size:17px;
+  color:#444;
+  margin-top:8px;
+  line-height:1.55;
 }
-
-.position {
-  font-size: 17px;
-  line-height: 1.55;
-  margin-bottom: 12px;
+.links{margin:12px 0 8px 0}
+.links a{margin-right:12px}
+section{margin-top:28px}
+h2{
+  font-size:24px;
+  border-bottom:1px solid var(--line);
+  padding-bottom:6px;
+  margin-bottom:12px;
 }
-
-.links a {
-  margin-right: 14px;
+p{margin:10px 0}
+ul{padding-left:22px;margin-top:8px}
+li{margin-bottom:6px}
+.news-panel{
+  max-height:250px;
+  overflow-y:auto;
+  background:var(--soft);
+  border:1px solid var(--line);
+  border-radius:6px;
+  padding:8px 18px;
 }
-
-h2 {
-  font-size: 23px;
-  margin-top: 42px;
-  border-bottom: 1px solid #ccc;
-  padding-bottom: 6px;
+.news-panel::-webkit-scrollbar{width:7px}
+.news-panel::-webkit-scrollbar-thumb{background:#c7d0db;border-radius:8px}
+.news-list{
+  list-style:none;
+  margin:0;
+  padding:0;
 }
-
-ul {
-  padding-left: 22px;
+.news-list li{
+  padding:6px 0;
+  border-bottom:1px solid #e7ecf2;
+  margin:0;
 }
-
-li {
-  margin-bottom: 7px;
+.news-list li:last-child{border-bottom:none}
+.date{
+  font-weight:700;
+  color:var(--blue-dark);
+  margin-right:7px;
 }
-
-.pub {
-  margin-bottom: 20px;
+.pub-container{
+  background:var(--soft);
+  border:1px solid var(--line);
+  border-radius:6px;
+  padding:8px 18px;
 }
-
-.pub-title {
-  font-weight: 700;
-  font-size: 16px;
+.pub{
+  padding:12px 0;
+  border-bottom:1px solid var(--soft-line);
 }
-
-.pub-venue {
-  font-style: italic;
+.pub:last-child{border-bottom:none}
+.pub-title{
+  font-weight:700;
+  color:#111;
+  line-height:1.45;
 }
-
-.tag {
-  color: #666;
-  font-size: 14px;
+.pub-authors{
+  color:var(--muted);
+  font-size:14.5px;
+  margin-top:2px;
 }
-
-.footer {
-  margin-top: 45px;
-  padding-top: 18px;
-  border-top: 1px solid #ddd;
-  text-align: center;
-  color: #777;
-  font-size: 14px;
+.pub-venue{
+  font-style:italic;
+  color:#2c5aa0;
+  margin-top:2px;
 }
-
-@media (max-width: 760px) {
-  nav {
-    text-align: left;
-  }
-
-  nav a {
-    margin-left: 0;
-    margin-right: 16px;
-  }
-
-  .home {
-    flex-direction: column;
-  }
-
-  .profile-img {
-    width: 210px;
-  }
+.footer{
+  text-align:center;
+  color:#777;
+  margin-top:40px;
+  padding-top:15px;
+  border-top:1px solid #ddd;
+  font-size:14px;
 }
-</style>
-</head>
+@media(max-width:760px){
+  body{padding:18px 18px;font-size:14.5px}
+  nav{text-align:left;line-height:1.9}
+  nav a{margin-left:0;margin-right:14px}
+  .home{flex-direction:column}
+  .profile-img{width:205px}
+  .name{font-size:30px}
+  .news-panel{max-height:270px}
+}
+</style>"""
+text = re.sub(r"<style>.*?</style>", style, text, flags=re.S)
 
-<body>
+# Replace nav with final
+nav = """<nav>
+<a href="#research">Research</a>
+<a href="#publications">Publications</a>
+<a href="#experience">Experience</a>
+<a href="#mentors">Mentors</a>
+<a href="#services">Services</a>
+</nav>"""
+text = re.sub(r"<nav>.*?</nav>", nav, text, flags=re.S)
 
-<nav>
-  <a href="#home">Home</a>
-  <a href="#research">Research</a>
-  <a href="#publications">Publications</a>
-  <a href="#experience">Experience</a>
-  <a href="#services">Services</a>
-</nav>
+# Home links spacing
+text = text.replace(
+    '<p><a href="https://scholar.google.com/citations?user=v8K8HIkAAAAJ">Google Scholar</a> |\n<a href="https://github.com/RongjunGe">GitHub</a></p>',
+    '<p class="links"><a href="https://scholar.google.com/citations?user=v8K8HIkAAAAJ" target="_blank">Google Scholar</a> | <a href="https://github.com/RongjunGe" target="_blank">GitHub</a></p>'
+)
 
-<section id="home" class="home">
-  <img src="profile.png" alt="Rongjun Ge" class="profile-img">
+# Replace Biography section
+bio = """<section>
+<h2>Biography</h2>
+<p>
+Dr. Rongjun Ge is currently an Associate Professor with the School of Computer Science and Engineering, Southeast University.
+He received his Ph.D. degree from Southeast University under the supervision of
+<a href="https://scholar.google.com/citations?hl=zh-CN&user=LxjxwpgAAAAJ" target="_blank">Prof. Yang Chen</a>.
+During his doctoral study, he was a visiting researcher at Western University, working with
+<a href="https://scholar.google.com/citations?hl=en&user=6WNtJa0AAAAJ" target="_blank">Prof. Shuo Li</a>.
+He subsequently conducted postdoctoral research at Rensselaer Polytechnic Institute (RPI) with
+<a href="https://scholar.google.com/citations?hl=en&user=pjK2mQwAAAAJ" target="_blank">Prof. Ge Wang</a>.
+</p>
+<p>
+His research interests include medical image analysis, low-dose CT reconstruction and enhancement, foundation models for
+medical imaging, intelligent surgical systems, and human-centered artificial intelligence. His recent work focuses on CT
+enhancement, multimodal representation learning, gaze-guided medical image understanding, federated learning, and intelligent
+surgical decision support systems.
+</p>
+<p>
+He has published more than 40 peer-reviewed papers in leading venues including <i>Nature Communications</i>,
+<i>IEEE Transactions on Medical Imaging</i>, <i>Medical Image Analysis</i>, <i>IEEE Transactions on Circuits and Systems for Video Technology</i>,
+<i>IEEE Journal of Biomedical and Health Informatics</i>, <i>Neural Networks</i>, CVPR, and MICCAI. His publications have received
+more than 1,400 citations with an H-index of 21 according to Google Scholar.
+</p>
+</section>"""
+text = re.sub(r"<section>\s*<h2>Biography</h2>.*?</section>", bio, text, count=1, flags=re.S)
 
-  <div>
-    <div class="name">Rongjun Ge 葛荣骏</div>
-
-    <div class="position">
-      Associate Professor<br>
-      School of Computer Science and Engineering<br>
-      Southeast University
-    </div>
-
-    <p>
-      Email:
-      <a href="mailto:rongjun_ge@seu.edu.cn">rongjun_ge@seu.edu.cn</a>
-    </p>
-
-    <div class="links">
-      <a href="https://scholar.google.com/citations?user=v8K8HIkAAAAJ&hl=zh-CN" target="_blank">Google Scholar</a>
-      <a href="https://github.com/RongjunGe" target="_blank">GitHub</a>
-      <a href="#" target="_blank">ORCID</a>
-    </div>
-
-    <p>
-      I am looking for motivated Ph.D. and Master students interested in medical image analysis,
-      low-dose CT reconstruction, foundation models, and intelligent healthcare systems.
-    </p>
-  </div>
-</section>
-
-<section>
-  <h2>Biography</h2>
-
-  <p>
-    Dr. Rongjun Ge is currently an Associate Professor in the School of Computer Science
-    and Engineering at Southeast University. His research focuses on medical image analysis,
-    low-dose CT reconstruction and enhancement, foundation models for medical imaging,
-    intelligent surgical systems, and human-centered artificial intelligence.
-  </p>
-
-  <p>
-    His recent work aims to develop reliable, generalizable, and clinically useful AI methods
-    for medical imaging, including CT enhancement, multimodal representation learning,
-    gaze-assisted medical image segmentation, and task-driven intelligent diagnosis.
-  </p>
-</section>
-
-<section>
-  <h2>News</h2>
-
-  <ul>
-    <li>[2026.06] Personal academic homepage launched.</li>
-    <li>[2026] Research proposals on low-dose CT foundation models and intelligent surgical systems are under preparation.</li>
-    <li>[2025] Multiple works on medical image analysis and foundation models were published or accepted.</li>
-  </ul>
-</section>
-
-<section id="research">
-  <h2>Research Interests</h2>
-
-  <ul>
-    <li>AI-enabled low-dose CT reconstruction and enhancement</li>
-    <li>Foundation models for medical imaging</li>
-    <li>Medical image segmentation, registration, and measurement</li>
-    <li>Human-centered medical AI and gaze-assisted learning</li>
-    <li>Intelligent surgical planning, navigation, and decision support</li>
-    <li>Federated learning and distributed optimization for medical AI</li>
-  </ul>
-</section>
-
-<section id="publications">
-  <h2>Selected Publications</h2>
-
-  <div class="pub">
-    <div class="pub-title">
-      Imaging Foundation Model for Universal Enhancement of Non-Ideal Measurement CT
-    </div>
-    <div>
-      Rongjun Ge, et al.
-    </div>
-    <div class="pub-venue">
-      Nature Communications, 2025.
-    </div>
-    <div class="tag">
-      Paper | Code | BibTeX
-    </div>
-  </div>
-
-  <div class="pub">
-    <div class="pub-title">
-      Task-Aware Adaptive Multi-Domain Pretraining for Universal CT Enhancement
-    </div>
-    <div>
-      Rongjun Ge, et al.
-    </div>
-    <div class="pub-venue">
-      IEEE Transactions on Medical Imaging.
-    </div>
-    <div class="tag">
-      Paper | Code | BibTeX
-    </div>
-  </div>
-
-  <div class="pub">
-    <div class="pub-title">
-      Human Gaze-Based Dual Teacher Guidance Learning for Semi-Supervised Medical Image Segmentation
-    </div>
-    <div>
-      Rongjun Ge, et al.
-    </div>
-    <div class="pub-venue">
-      Neural Networks.
-    </div>
-    <div class="tag">
-      Paper | BibTeX
-    </div>
-  </div>
-
-  <div class="pub">
-    <div class="pub-title">
-      Adaptation Follows Human Attention: Gaze-Assisted Medical Segment Anything Model
-    </div>
-    <div>
-      Rongjun Ge, et al.
-    </div>
-    <div class="pub-venue">
-      IEEE Transactions on Circuits and Systems for Video Technology.
-    </div>
-    <div class="tag">
-      Paper | Code | BibTeX
-    </div>
-  </div>
-
-  <div class="pub">
-    <div class="pub-title">
-      Conditional Virtual Imaging for Few-Shot Vascular Image Segmentation
-    </div>
-    <div>
-      Rongjun Ge, et al.
-    </div>
-    <div class="pub-venue">
-      IEEE Transactions on Medical Imaging.
-    </div>
-    <div class="tag">
-      Paper | Code | BibTeX
-    </div>
-  </div>
-
-  <p>
-    Full publication list is available on
-    <a href="#" target="_blank">Google Scholar</a>.
-  </p>
-</section>
-
-<section id="experience">
-  <h2>Professional Experience</h2>
-
-  <ul>
-    <li>Associate Professor, Southeast University</li>
-    <li>Postdoctoral Research Fellow, Rensselaer Polytechnic Institute, with Prof. Ge Wang</li>
-    <li>Visiting Researcher, Western University, with Prof. Shuo Li</li>
-    <li>Ph.D., Southeast University, supervised by Prof. Yang Chen</li>
-  </ul>
-</section>
-
-<section>
-  <h2>Research Grants</h2>
-
-  <ul>
-    <li>National Natural Science Foundation of China projects</li>
-    <li>Provincial and municipal research projects</li>
-    <li>Industry-academia collaborative projects in medical AI and intelligent healthcare</li>
-  </ul>
-</section>
-
-<section>
-  <h2>Awards and Honors</h2>
-
-  <ul>
-    <li>Provincial and university-level research awards</li>
-    <li>Academic honors in medical image analysis and artificial intelligence</li>
-    <li>Best paper and outstanding contribution awards</li>
-  </ul>
-</section>
-
-<section id="services">
-  <h2>Academic Services</h2>
-
-  <ul>
-    <li>Reviewer for IEEE TPAMI, IEEE TMI, IEEE TASE, IEEE TNNLS, IEEE TCSVT, IEEE TIM, and IEEE JBHI</li>
-    <li>Reviewer for Medical Image Analysis, Pattern Recognition, Computer Methods and Programs in Biomedicine, and Computerized Medical Imaging and Graphics</li>
-    <li>Guest Editor for special issues related to biomedical engineering and medical AI</li>
-    <li>Program committee member and reviewer for international conferences in AI and medical imaging</li>
-  </ul>
-</section>
-
-<section>
-  <h2>Teaching</h2>
-
-  <ul>
-    <li>Introduction to Artificial Intelligence</li>
-    <li>Freshman Seminar: Introduction to Medicine</li>
-    <li>Medical Image Analysis and Artificial Intelligence</li>
-  </ul>
-</section>
-
-<section>
-  <h2>Openings</h2>
-
-  <p>
-    Prospective Ph.D. and Master students with interests in medical image analysis,
-    CT reconstruction, foundation models, and intelligent healthcare are welcome to contact me.
-  </p>
-</section>
-
-<div class="footer">
-  © 2026 Rongjun Ge. Last updated: June 2026.
+# Expand/replace news in desired format
+news = """<section>
+<h2>News</h2>
+<div class="news-panel">
+<ul class="news-list">
+<li><span class="date">[2026.06]</span>Imaging foundation model paper accepted by <i>Nature Communications</i>.</li>
+<li><span class="date">[2026.05]</span>Direct PET-to-CT generation paper accepted by <i>IEEE Journal of Biomedical and Health Informatics</i>.</li>
+<li><span class="date">[2026.04]</span>VCC-DSA paper accepted by <i>Medical Image Analysis</i>.</li>
+<li><span class="date">[2026.03]</span>SkeDiff paper accepted by <i>IEEE Journal of Biomedical and Health Informatics</i>.</li>
+<li><span class="date">[2025.07]</span>Human gaze-based dual teacher guidance learning paper accepted by <i>Neural Networks</i>.</li>
+<li><span class="date">[2025.04]</span>Gaze-assisted human-centric domain adaptation paper accepted by <i>IEEE ISBI</i>.</li>
+<li><span class="date">[2025.02]</span>Homeomorphism prior paper accepted by <i>IEEE Transactions on Medical Imaging</i>.</li>
+<li><span class="date">[2023.04]</span>Anisotropy CT super-resolution paper accepted by <i>Biomedical Signal Processing and Control</i>.</li>
+<li><span class="date">[2023.01]</span>3DSRNet paper accepted by <i>IEEE Transactions on Instrumentation and Measurement</i>.</li>
+<li><span class="date">[2022.09]</span>DDPNet paper accepted by <i>Lecture Notes in Computer Science</i>.</li>
+<li><span class="date">[2022.07]</span>Thin-structure segmentation paper accepted by <i>IEEE Transactions on Neural Networks and Learning Systems</i>.</li>
+<li><span class="date">[2022.06]</span>Cardiac volume estimation paper accepted by <i>Knowledge-Based Systems</i>.</li>
+<li><span class="date">[2022.04]</span>Rib fracture segmentation paper accepted by <i>International Journal of Computer Assisted Radiology and Surgery</i>.</li>
+<li><span class="date">[2021.11]</span>X-CTRSNet paper accepted by <i>Knowledge-Based Systems</i>.</li>
+<li><span class="date">[2021.10]</span>X-ray baggage inspection paper accepted by <i>IEEE Transactions on Industrial Electronics</i>.</li>
+<li><span class="date">[2021.07]</span>Few-shot deformable registration paper accepted by <i>IEEE Journal of Biomedical and Health Informatics</i>.</li>
+<li><span class="date">[2019.10]</span>Low-dose CT reconstruction paper accepted by <i>MICCAI / LNCS</i>.</li>
+<li><span class="date">[2019.07]</span>Image encryption paper accepted by <i>IEEE Access</i>.</li>
+</ul>
 </div>
+</section>"""
+text = re.sub(r"<section>\s*<h2>News</h2>.*?</section>", news, text, count=1, flags=re.S)
 
-</body>
-</html>
+# Replace publications with richer final list and joined block
+pubs = """<section id="publications">
+<h2>Selected Publications</h2>
+<div class="pub-container">
+<div class="pub">
+  <div class="pub-title">Imaging Foundation Model for Universal Enhancement of Non-Ideal Measurement CT</div>
+  <div class="pub-authors">Rongjun Ge, et al.</div>
+  <div class="pub-venue">Nature Communications, 2026</div>
+</div>
+<div class="pub">
+  <div class="pub-title">Task-Aware Adaptive Multi-Domain Pretraining for Universal CT Enhancement</div>
+  <div class="pub-authors">Rongjun Ge, et al.</div>
+  <div class="pub-venue">IEEE Transactions on Medical Imaging</div>
+</div>
+<div class="pub">
+  <div class="pub-title">Conditional Virtual Imaging for Few-Shot Vascular Image Segmentation</div>
+  <div class="pub-authors">Rongjun Ge, et al.</div>
+  <div class="pub-venue">IEEE Transactions on Medical Imaging</div>
+</div>
+<div class="pub">
+  <div class="pub-title">Adaptation Follows Human Attention: Gaze-Assisted Medical Segment Anything Model</div>
+  <div class="pub-authors">Rongjun Ge, et al.</div>
+  <div class="pub-venue">IEEE Transactions on Circuits and Systems for Video Technology</div>
+</div>
+<div class="pub">
+  <div class="pub-title">Human Gaze-Based Dual Teacher Guidance Learning for Semi-Supervised Medical Image Segmentation</div>
+  <div class="pub-authors">Rongjun Ge, et al.</div>
+  <div class="pub-venue">Neural Networks</div>
+</div>
+<div class="pub">
+  <div class="pub-title">Homeomorphism Prior for Topology-Preserving Medical Image Analysis</div>
+  <div class="pub-authors">Rongjun Ge, et al.</div>
+  <div class="pub-venue">IEEE Transactions on Medical Imaging</div>
+</div>
+<div class="pub">
+  <div class="pub-title">Learning Projection Views for Low-Dose CT Reconstruction</div>
+  <div class="pub-authors">Rongjun Ge, et al.</div>
+  <div class="pub-venue">MICCAI / Lecture Notes in Computer Science</div>
+</div>
+<div class="pub">
+  <div class="pub-title">X-CTRSNet: Low-Dose CT Reconstruction with Deep Learning</div>
+  <div class="pub-authors">Rongjun Ge, et al.</div>
+  <div class="pub-venue">Knowledge-Based Systems</div>
+</div>
+<div class="pub">
+  <div class="pub-title">Thin-Structure Segmentation with Deep Learning</div>
+  <div class="pub-authors">Rongjun Ge, et al.</div>
+  <div class="pub-venue">IEEE Transactions on Neural Networks and Learning Systems</div>
+</div>
+<div class="pub">
+  <div class="pub-title">Few-Shot Deformable Medical Image Registration</div>
+  <div class="pub-authors">Rongjun Ge, et al.</div>
+  <div class="pub-venue">IEEE Journal of Biomedical and Health Informatics</div>
+</div>
+</div>
+<p>For a complete publication list, please visit my <a href="https://scholar.google.com/citations?user=v8K8HIkAAAAJ" target="_blank">Google Scholar profile</a>.</p>
+</section>"""
+text = re.sub(r"<section id=\"publications\">.*?</section>", pubs, text, flags=re.S)
+
+# Insert professional experience before mentors if not exists
+experience = """<section id="experience">
+<h2>Professional Experience</h2>
+<ul>
+<li>Associate Professor, Southeast University</li>
+<li>Postdoctoral Research Fellow, Rensselaer Polytechnic Institute (RPI), with Prof. Ge Wang</li>
+<li>Visiting Researcher, Western University, with Prof. Shuo Li <span style="color:#666;">(during Ph.D. study)</span></li>
+<li>Ph.D., Southeast University, supervised by Prof. Yang Chen</li>
+</ul>
+</section>
+
+"""
+if 'id="experience"' not in text:
+    text = text.replace('<section id="mentors">', experience + '<section id="mentors">')
+
+# Replace mentors with links
+mentors = """<section id="mentors">
+<h2>Academic Mentors</h2>
+<ul>
+<li><a href="https://scholar.google.com/citations?hl=zh-CN&user=LxjxwpgAAAAJ" target="_blank">Prof. Yang Chen</a>, Southeast University</li>
+<li><a href="https://scholar.google.com/citations?hl=en&user=6WNtJa0AAAAJ" target="_blank">Prof. Shuo Li</a>, Western University / Case Western Reserve University</li>
+<li><a href="https://scholar.google.com/citations?hl=en&user=pjK2mQwAAAAJ" target="_blank">Prof. Ge Wang</a>, Rensselaer Polytechnic Institute</li>
+</ul>
+</section>"""
+text = re.sub(r"<section id=\"mentors\">.*?</section>", mentors, text, flags=re.S)
+
+# Improve services punctuation
+services = """<section id="services">
+<h2>Academic Services</h2>
+<ul>
+<li>Reviewer for IEEE TPAMI, IEEE TMI, IEEE TASE, IEEE TNNLS, IEEE TCSVT, IEEE TIM, and IEEE JBHI.</li>
+<li>Reviewer for Medical Image Analysis, Pattern Recognition, Computer Methods and Programs in Biomedicine, and Computerized Medical Imaging and Graphics.</li>
+<li>Guest editor and conference reviewer in medical imaging, computer vision, and artificial intelligence.</li>
+</ul>
+</section>"""
+text = re.sub(r"<section id=\"services\">.*?</section>", services, text, flags=re.S)
+
+out = Path("/mnt/data/index_final_ready.html")
+out.write_text(text, encoding="utf-8")
+print(out)
